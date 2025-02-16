@@ -1,0 +1,163 @@
+
+
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Добавяне и Преглед на данни в Google Sheets</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    form {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    label {
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Добавяне и Преглед на данни в Google Sheets</h1>
+
+  <!-- Форма за добавяне на нови данни -->
+  <form id="dataForm">
+    <label for="invoice">№ на фактура:</label>
+    <input type="text" id="invoice" placeholder="Пример: 1000000600/ 08.01.2019" required>
+
+    <label for="purchases">Покупки:</label>
+    <input type="text" id="purchases" placeholder="Пример: семе царевица NS 3022 Bio">
+
+    <label for="sales">Продажби:</label>
+    <input type="text" id="sales" placeholder="Пример: био ленено семе">
+
+    <label for="quantity">Количество:</label>
+    <input type="text" id="quantity" placeholder="Пример: 7 торби" required>
+
+    <label for="counterparty">Контрагент:</label>
+    <input type="text" id="counterparty" placeholder="Пример: Про Импекс Трейд ООД" required>
+
+    <button type="submit">Добави ред</button>
+  </form>
+
+  <!-- Таблица за показване на съществуващите данни -->
+  <h2>Съществуващи данни:</h2>
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>№ на фактура</th>
+        <th>Покупки</th>
+        <th>Продажби</th>
+        <th>Количество</th>
+        <th>Контрагент</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Данните ще се добавят тук динамично -->
+    </tbody>
+  </table>
+
+  <script>
+
+    const sheetId = '1KWth5jpwYnw7bi3EdK3xgyutUMctyg_0ZL_ynmbUr4I'; // Заменете с вашия Google Sheet ID
+    const apiKey = 'AIzaSyCr0F3r-kNNqf9cBb7Tz9Z-lSDVaYv4BaA`'; // Заменете с вашия Google Sheets API ключ
+    const sheetName = 'Sheet1'; // Заменете с името на вашия лист
+
+    // Функция за извличане на данни от Google Sheets
+    async function fetchData() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/1KWth5jpwYnw7bi3EdK3xgyutUMctyg_0ZL_ynmbUr4I/values/Sheet1!A:E?key=AIzaSyCr0F3r-kNNqf9cBb7Tz9Z-lSDVaYv4BaA`;
+
+      try {
+        const response = await fetch(url);
+        const result = await response.json();
+        const rows = result.values || [];
+
+        // Изчистване на таблицата
+        const tableBody = document.querySelector('#dataTable tbody');
+        tableBody.innerHTML = '';
+
+        // Добавяне на редове в таблицата
+        rows.forEach(row => {
+          const tr = document.createElement('tr');
+          row.forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+          });
+          tableBody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error('Грешка при извличане на данни:', error);
+      }
+    }
+
+    // Функция за добавяне на нов ред в Google Sheets
+    async function addRowToSheet(data) {
+     const url = `https://sheets.googleapis.com/v4/spreadsheets/1KWth5jpwYnw7bi3EdK3xgyutUMctyg_0ZL_ynmbUr4I/values/Sheet1!A:E:append?valueInputOption=USER_ENTERED&key=AIzaSyCr0F3r-kNNqf9cBb7Tz9Z-lSDVaYv4BaA`;
+   //const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:E:append?valueInputOption=USER_ENTERED&key=${apiKey}`;
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            values: [data],
+          }),
+        });
+
+        const result = await response.json();
+        console.log('Данните са добавени успешно:', result);
+        alert('Данните са добавени успешно!');
+        document.getElementById('dataForm').reset(); // Изчистване на формата
+        fetchData(); // Обновяване на таблицата с новите данни
+      } catch (error) {
+        console.error('Грешка при добавяне на данни:', error);
+        alert('Грешка при добавяне на данни. Моля, опитайте отново.');
+      }
+    }
+
+    // Зареждане на данни при стартиране на страницата
+    document.addEventListener('DOMContentLoaded', fetchData);
+
+    // Добавяне на нов ред при изпращане на формата
+    document.getElementById('dataForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Вземане на данни от формата
+      const invoice = document.getElementById('invoice').value;
+      const purchases = document.getElementById('purchases').value;
+      const sales = document.getElementById('sales').value;
+      const quantity = document.getElementById('quantity').value;
+      const counterparty = document.getElementById('counterparty').value;
+
+      // Подготовка на данните за Google Sheets
+      const data = [document.getElementById('invoice').value, document.getElementById('purchases').value, document.getElementById('sales').value, document.getElementById('quantity').value, document.getElementById('counterparty').value];
+
+      // Добавяне на нов ред
+      addRowToSheet(data);
+    });
+  </script>
+</body>
+</html>
